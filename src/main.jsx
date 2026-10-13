@@ -58,7 +58,7 @@ const Application=()=>{
             <Route path="/order/:entityName" element={<Order />} />
             <Route path="/bills" element={<Bills />} />
             <Route path="/unbilled_orders" element={<Orders />} />
-            <Route path="/profile/:customerId" element={<CustomerProfilePage />} />
+            <Route path="/profile/:customerId" element={<CustomerProfilePage user={user?.name} name={user?.name} role={user?.role} />} />
             <Route path="/product/:id" element={<Stock_Movement />} />
             <Route path="/billing/:id" element={<Billing />} />
             <Route path="/accounting" element={<AccountingPage />} />

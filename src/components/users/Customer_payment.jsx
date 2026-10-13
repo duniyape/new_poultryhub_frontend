@@ -31,7 +31,15 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
         reference: '',
         Cq_date: moment().format('YYYY-MM-DD'),
     });
-    const ledgerCode=data.type === "Customer"?"A7":"A6"
+
+    useEffect(() => {
+        if (data && Object.keys(data).length > 0) {
+            setCustomerData(data);
+        }
+    }, [data]);
+
+    const cType = customerData?.type || data?.type || "Customer";
+    const ledgerCode = cType === "Customer" ? "A7" : "A6";
 
     // --- Data Fetching Logic (Retained from original) ---
 
@@ -129,7 +137,7 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
         if (customerId) {
             calculateLedgerWithDateRangeAndCustomer(ledgerCode, customerId); 
         }
-    }, [customerId]);
+    }, [customerId, ledgerCode]);
 
     // --- Logic Handlers (Retained from original) ---
 
@@ -272,10 +280,10 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
         dr,
         vendor_id: customerId,
         total_amount: paymentAmount,
-        voucher_type:data.type==="Customer"?'receipt':'payment',
+        voucher_type: cType === "Customer" ? 'receipt' : 'payment',
         voucher_mode,
     };
-        if(data.type==="Customer"){
+        if(cType === "Customer"){
             ledgerData['narration']=`Payment Received from ${customerId}`
             ledgerData['cr']=[{ ledger: ledgerCode, particular: `Payment Received`, amt: paymentAmount }]
             ledgerData['dr']=[ { ledger: formData.mode==="CASH" ? 'A1' :formData.mode==="SMART"?'A8':'A2', particular: `Payment Received-${customerId}`, amt: paymentAmount}]
@@ -339,7 +347,7 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
         <div className="max-w-4xl mx-auto p-2 sm:p-4 md:p-6 bg-gray-50 min-h-screen">
             <div className="bg-white p-4 sm:p-6 rounded-xl shadow-2xl border border-gray-200">
                 <h2 className="text-xl sm:text-3xl font-bold text-center text-teal-700 mb-4 sm:mb-6 border-b pb-2 sm:pb-4">
-                    💰{data.type} {data.type==="Customer"?"Receipt":"Payment"}
+                    💰{cType} {cType === "Customer" ? "Receipt" : "Payment"}
                 </h2>
 
                 {/* Customer Details Summary */}
@@ -362,7 +370,7 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
                 {/* Payment Form */}
                 {customerData && (
                     <form onSubmit={handleSubmit} className="mb-8 p-3 sm:p-5 border border-gray-300 rounded-lg shadow-inner bg-gray-50">
-                        <h3 className="text-lg sm:text-xl font-bold text-teal-700 mb-3 border-b pb-2">Record New {data.type==="Customer"?"Receipt":"Payment"}</h3>
+                        <h3 className="text-lg sm:text-xl font-bold text-teal-700 mb-3 border-b pb-2">Record New {cType === "Customer" ? "Receipt" : "Payment"}</h3>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                            
@@ -372,7 +380,7 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
                             
                             {/* Payment Mode */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">{data.type==="Customer"?"Receipt":"Payment"} Mode <span className="text-red-500">*</span></label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{cType === "Customer" ? "Receipt" : "Payment"} Mode <span className="text-red-500">*</span></label>
                                 <select
                                     name="mode"
                                     required
