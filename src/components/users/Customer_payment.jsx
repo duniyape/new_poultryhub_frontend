@@ -138,22 +138,185 @@ const Customer_payment = ({ data, customerId: propCustomerId, reload }) => {
         }
     };
 
-    const handlePdfDownload = () => {
-        if (!transactions || transactions.length === 0) return;
-        const doc = new jsPDF();
-        autoTable(doc, {
-            head: [['S No', 'Date', 'Particular', 'Debit (Dr)', 'Credit (Cr)', 'Balance']],
-            body: transactions.map((item, idx) => [
-                idx + 1,
-                item.date,
-                item.particular,
-                item.dr_amt,
-                item.cr_amt,
-                item.balance,
-            ]),
-        });
-        doc.save(`ledger_${customerId}.pdf`);
-    };
+    // const handlePdfDownload = () => {
+    //     if (!transactions || transactions.length === 0) return;
+    //     const doc = new jsPDF();
+    //     autoTable(doc, {
+    //         head: [['S No', 'Date', 'Particular', 'Debit (Dr)', 'Credit (Cr)', 'Balance']],
+    //         body: transactions.map((item, idx) => [
+    //             idx + 1,
+    //             item.date,
+    //             item.particular,
+    //             item.dr_amt,
+    //             item.cr_amt,
+    //             item.balance,
+    //         ]),
+    //     });
+    //     doc.save(`ledger_${customerId}.pdf`);
+    // };
+
+
+
+const handlePdfDownload = () => {
+    if (!transactions || transactions.length === 0) {
+        Swal.fire("No Data", "No ledger transactions found.", "warning");
+        return;
+    }
+
+    const doc = new jsPDF();
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Company / Report Heading
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("CUSTOMER LEDGER", pageWidth / 2, 18, {
+        align: "center",
+    });
+
+    // Header divider
+    doc.setDrawColor(0, 128, 128);
+    doc.setLineWidth(0.6);
+    doc.line(14, 23, pageWidth - 14, 23);
+
+    // Customer Details Heading
+    doc.setFontSize(12);
+    doc.setTextColor(0, 100, 100);
+    doc.text("Customer Details", 14, 32);
+
+    // Customer Details
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+
+    const leftX = 14;
+    const rightX = pageWidth / 2 + 5;
+
+    const leftDetails = [
+        `Shop Name: ${customerData?.shop || "-"}`,
+        `Owner Name: ${customerData?.owner || "-"}`,
+        `Customer ID: ${customerId || "-"}`,
+    ];
+
+    const rightDetails = [
+        `Contact: ${customerData?.contact || "-"}`,
+        `Account Type: ${cType || "-"}`,
+        `Report Date: ${moment().format("DD-MM-YYYY")}`,
+    ];
+
+    leftDetails.forEach((text, index) => {
+        doc.text(text, leftX, 41 + index * 7);
+    });
+
+    rightDetails.forEach((text, index) => {
+        doc.text(text, rightX, 41 + index * 7);
+    });
+
+    // Balance Summary
+    const balance = Number(customerData?.balance || 0);
+
+    doc.setFillColor(240, 248, 255);
+    doc.roundedRect(14, 64, pageWidth - 28, 14, 2, 2, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+
+    const balanceText =
+        balance > 0
+            ? `Due: Rs. ${balance.toFixed(2)}`
+            : balance < 0
+            ? `Advance: Rs. ${Math.abs(balance).toFixed(2)}`
+            : "Balance: Rs. 0.00";
+
+    doc.text(balanceText, 18, 73);
+
+    // Transaction Ledger Table
+    autoTable(doc, {
+        startY: 85,
+        head: [[
+            "S No",
+            "Date",
+            "Particular",
+            "Debit (Dr)",
+            "Credit (Cr)",
+            "Balance",
+        ]],
+
+        body: transactions.map((item, idx) => [
+            item.isBalance ? "OB" : idx,
+            item.date
+                ? moment(item.date).format("DD-MM-YYYY")
+                : "-",
+            item.particular || "-",
+            Number(item.dr_amt || 0).toFixed(2),
+            Number(item.cr_amt || 0).toFixed(2),
+            `${Math.abs(Number(item.balance || 0)).toFixed(2)} ${
+                Number(item.balance || 0) > 0
+                    ? "Dr"
+                    : Number(item.balance || 0) < 0
+                    ? "Cr"
+                    : ""
+            }`,
+        ]),
+
+        theme: "grid",
+
+        headStyles: {
+            fillColor: [0, 100, 100],
+            textColor: 255,
+            fontStyle: "bold",
+            halign: "center",
+        },
+
+        styles: {
+            fontSize: 8,
+            cellPadding: 3,
+            overflow: "linebreak",
+        },
+
+        columnStyles: {
+            0: { cellWidth: 13 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: "auto" },
+            3: { halign: "right" },
+            4: { halign: "right" },
+            5: { halign: "right" },
+        },
+
+        margin: {
+            left: 14,
+            right: 14,
+            bottom: 18,
+        },
+
+        didDrawPage: () => {
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(100, 100, 100);
+
+            doc.text(
+                `Customer: ${customerData?.shop || customerId}`,
+                14,
+                pageHeight - 8
+            );
+
+            doc.text(
+                `Page ${doc.internal.getCurrentPageInfo().pageNumber}`,
+                pageWidth - 14,
+                pageHeight - 8,
+                { align: "right" }
+            );
+        },
+    });
+
+    // Download PDF
+    doc.save(
+        `ledger_${customerData?.shop || customerId}_${moment().format("YYYYMMDD")}.pdf`
+    );
+};
+
 
     useEffect(() => {
         if (customerId) {
