@@ -7,24 +7,29 @@ import axios from "axios";
 // Assuming Denomination is in a reachable path
 // import Denomination from "./Denomination"; 
 import { Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+import { useRef } from "react";
 import { useLoader } from "../../context/LoaderContext";
-const phoneNumberId=670517682822062
-const accessToken='EAA6rtuUkSgIBOw1ZBKc0daGfX8SSbt86QetCckUtCodtMy2ZA44d9e0nrEUhZAsxaroHpX1217ROdLpkDRD1RwKa0VWMzgy5eMfIBv4WN1CYhXnAfXx7psCzgZB2xJkEZABscWDYYsKRwBHXMnfBdT905ZCLklGOnXS8tCaqsDGpoK7s5XlkOxgh4udFz67qw5aQZDZD'
-    
+const phoneNumberId = 670517682822062
+const accessToken = 'EAA6rtuUkSgIBOw1ZBKc0daGfX8SSbt86QetCckUtCodtMy2ZA44d9e0nrEUhZAsxaroHpX1217ROdLpkDRD1RwKa0VWMzgy5eMfIBv4WN1CYhXnAfXx7psCzgZB2xJkEZABscWDYYsKRwBHXMnfBdT905ZCLklGOnXS8tCaqsDGpoK7s5XlkOxgh4udFz67qw5aQZDZD'
+
 
 // NOTE: WhatsApp API keys are omitted for security
 const database = getDatabase();
 
-const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
+const Customer_payment = ({ data, customerId: propCustomerId, reload }) => {
     // Determine IDs: propCustomerId for dashboard, useParams for standalone
     const { id: paramId } = useParams();
     const customerId = propCustomerId || paramId;
-    
+
     // State management
     const [customerData, setCustomerData] = useState(data || null);
     const [loading, setLoading] = useState(false);
     const [transactions, setTransactions] = useState([]);
     const { showLoader, hideLoader } = useLoader();
+    const tableRef = useRef(null);
     const [formData, setFormData] = useState({
         amount: '',
         mode: '',
@@ -49,7 +54,7 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
         if (!cId) return;
         showLoader();
         try {
-            const ledgerRef = query(ref(database, "ledger"),orderByChild("vendor_id"),equalTo(cId));
+            const ledgerRef = query(ref(database, "ledger"), orderByChild("vendor_id"), equalTo(cId));
             const snapshot = await get(ledgerRef);
             if (!snapshot.exists()) return null;
 
@@ -132,10 +137,27 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
             hideLoader();
         }
     };
-    
+
+    const handlePdfDownload = () => {
+        if (!transactions || transactions.length === 0) return;
+        const doc = new jsPDF();
+        autoTable(doc, {
+            head: [['S No', 'Date', 'Particular', 'Debit (Dr)', 'Credit (Cr)', 'Balance']],
+            body: transactions.map((item, idx) => [
+                idx + 1,
+                item.date,
+                item.particular,
+                item.dr_amt,
+                item.cr_amt,
+                item.balance,
+            ]),
+        });
+        doc.save(`ledger_${customerId}.pdf`);
+    };
+
     useEffect(() => {
         if (customerId) {
-            calculateLedgerWithDateRangeAndCustomer(ledgerCode, customerId); 
+            calculateLedgerWithDateRangeAndCustomer(ledgerCode, customerId);
         }
     }, [customerId, ledgerCode]);
 
@@ -146,117 +168,117 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
- const sendInvoice = async () => {
-  const number=customerData.contact||null
-  const bal=customerData.balance*1-formData.amount*1 
-  // console.log(bal<0?0:bal,formData.amount,customerData.balance<0?0:customerData.balance)
-  if(!number) return
-    showLoader();
-    try {
-  let messagePayload={};
-  // If mediaUrl is provided, send image message  
-  if(formData.mode==="CHEQUE"){
-     messagePayload = {
-    messaging_product: "whatsapp",
-    to: `91${number}`,
-    type: "template",
-    template: {
-      name: "cheque_payment", // Your approved template name
-      language: {
-        code: "hi"
-      },
-      components: [
-        {
-          type: "body",
-          parameters: [
-          {
-            type: "text",
-            text: customerData.balance<0?0:customerData.balance 
-          },
-          {
-            type: "text",
-            text: formData.amount // parameter 1
-          },
-          {
-            type: "text",
-            text: bal<0?0:bal // parameter 1
-          },
-          {
-            type: "text",
-            text: formData.reference||'' // parameter 1
-          },
-          {
-            type: "text",
-            text: new Date(formData.Cq_date).toLocaleDateString("en-GB")||'' // parameter 1
-          },
-          {
-            type: "text",
-            text: name // parameter 1
-          },
-          ]
-        },
-      
-      ]
-    }
-  };
-}else{
-   messagePayload = {
-    messaging_product: "whatsapp",
-    to: `91${number}`,
-    type: "template",
-    template: {
-      name: "cash_payment", // Your approved template name
-      language: {
-        code: "hi"
-      },
-      components: [
-        {
-          type: "body",
-          parameters: [
-          {
-            type: "text",
-            text: customerData.balance<0?0:customerData.balance 
-          },
-          {
-            type: "text",
-            text: formData.amount // parameter 1
-          },
-          {
-            type: "text",
-            text: bal<0?0:bal // parameter 1
-          },
-          {
-            type: "text",
-            text: formData.mode // parameter 1
-          },
-          {
-            type: "text",
-            text: name // parameter 1
-          },
-          ]
-        },
-      
-      ]
-    }
-  };
-}
-      await axios.post(
-        `https://graph.facebook.com/v22.0/${phoneNumberId}/messages`,
-        messagePayload,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
+    const sendInvoice = async () => {
+        const number = customerData.contact || null
+        const bal = customerData.balance * 1 - formData.amount * 1
+        // console.log(bal<0?0:bal,formData.amount,customerData.balance<0?0:customerData.balance)
+        if (!number) return
+        showLoader();
+        try {
+            let messagePayload = {};
+            // If mediaUrl is provided, send image message  
+            if (formData.mode === "CHEQUE") {
+                messagePayload = {
+                    messaging_product: "whatsapp",
+                    to: `91${number}`,
+                    type: "template",
+                    template: {
+                        name: "cheque_payment", // Your approved template name
+                        language: {
+                            code: "hi"
+                        },
+                        components: [
+                            {
+                                type: "body",
+                                parameters: [
+                                    {
+                                        type: "text",
+                                        text: customerData.balance < 0 ? 0 : customerData.balance
+                                    },
+                                    {
+                                        type: "text",
+                                        text: formData.amount // parameter 1
+                                    },
+                                    {
+                                        type: "text",
+                                        text: bal < 0 ? 0 : bal // parameter 1
+                                    },
+                                    {
+                                        type: "text",
+                                        text: formData.reference || '' // parameter 1
+                                    },
+                                    {
+                                        type: "text",
+                                        text: new Date(formData.Cq_date).toLocaleDateString("en-GB") || '' // parameter 1
+                                    },
+                                    {
+                                        type: "text",
+                                        text: name // parameter 1
+                                    },
+                                ]
+                            },
+
+                        ]
+                    }
+                };
+            } else {
+                messagePayload = {
+                    messaging_product: "whatsapp",
+                    to: `91${number}`,
+                    type: "template",
+                    template: {
+                        name: "cash_payment", // Your approved template name
+                        language: {
+                            code: "hi"
+                        },
+                        components: [
+                            {
+                                type: "body",
+                                parameters: [
+                                    {
+                                        type: "text",
+                                        text: customerData.balance < 0 ? 0 : customerData.balance
+                                    },
+                                    {
+                                        type: "text",
+                                        text: formData.amount // parameter 1
+                                    },
+                                    {
+                                        type: "text",
+                                        text: bal < 0 ? 0 : bal // parameter 1
+                                    },
+                                    {
+                                        type: "text",
+                                        text: formData.mode // parameter 1
+                                    },
+                                    {
+                                        type: "text",
+                                        text: name // parameter 1
+                                    },
+                                ]
+                            },
+
+                        ]
+                    }
+                };
+            }
+            await axios.post(
+                `https://graph.facebook.com/v22.0/${phoneNumberId}/messages`,
+                messagePayload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            console.log(`Message sent to ${number}`);
+        } catch (error) {
+            console.error(`Failed to send message to ${number}:`, error.response?.data || error.message);
+        } finally {
+            hideLoader();
+            return
         }
-      );
-      console.log(`Message sent to ${number}`);
-    } catch (error) {
-      console.error(`Failed to send message to ${number}:`, error.response?.data || error.message);
-    } finally {
-      hideLoader();
-      return
-    }
     };
 
     const handleSubmit = async (e) => {
@@ -265,36 +287,36 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
         const paymentAmount = parseFloat(formData.amount);
         setLoading(true);
         showLoader();
-        
+
         const ledgerRef = push(ref(database, "ledger"));
-        const currentBalance = parseFloat(customerData.balance || 0); 
-        const voucher_mode=formData.mode==="CASH"?"cash":'bank'
+        const currentBalance = parseFloat(customerData.balance || 0);
+        const voucher_mode = formData.mode === "CASH" ? "cash" : 'bank'
         let dr = [];
-        let cr=[];
+        let cr = [];
         const ledgerData = {
-        id: ledgerRef.key,
-        mode: formData.mode,    
-        reference: formData.reference,
-        date: new Date().toISOString(),
-        cr,
-        dr,
-        vendor_id: customerId,
-        total_amount: paymentAmount,
-        voucher_type: cType === "Customer" ? 'receipt' : 'payment',
-        voucher_mode,
-    };
-        if(cType === "Customer"){
-            ledgerData['narration']=`Payment Received from ${customerId}`
-            ledgerData['cr']=[{ ledger: ledgerCode, particular: `Payment Received`, amt: paymentAmount }]
-            ledgerData['dr']=[ { ledger: formData.mode==="CASH" ? 'A1' :formData.mode==="SMART"?'A8':'A2', particular: `Payment Received-${customerId}`, amt: paymentAmount}]
-        }else{
-            ledgerData['narration']=`Payment Made to ${customerId}`
-            ledgerData['dr']=[ { ledger: ledgerCode, particular: `Payment Made`, amt: paymentAmount }]
-            ledgerData['cr']=[{ ledger: formData.mode==="CASH" ? 'A1' :formData.mode==="SMART"?'A8':'A2', particular: `Payment Made-${customerId}`, amt: paymentAmount }]
+            id: ledgerRef.key,
+            mode: formData.mode,
+            reference: formData.reference,
+            date: new Date().toISOString(),
+            cr,
+            dr,
+            vendor_id: customerId,
+            total_amount: paymentAmount,
+            voucher_type: cType === "Customer" ? 'receipt' : 'payment',
+            voucher_mode,
+        };
+        if (cType === "Customer") {
+            ledgerData['narration'] = `Payment Received from ${customerId}`
+            ledgerData['cr'] = [{ ledger: ledgerCode, particular: `Payment Received`, amt: paymentAmount }]
+            ledgerData['dr'] = [{ ledger: formData.mode === "CASH" ? 'A1' : formData.mode === "SMART" ? 'A8' : 'A2', particular: `Payment Received-${customerId}`, amt: paymentAmount }]
+        } else {
+            ledgerData['narration'] = `Payment Made to ${customerId}`
+            ledgerData['dr'] = [{ ledger: ledgerCode, particular: `Payment Made`, amt: paymentAmount }]
+            ledgerData['cr'] = [{ ledger: formData.mode === "CASH" ? 'A1' : formData.mode === "SMART" ? 'A8' : 'A2', particular: `Payment Made-${customerId}`, amt: paymentAmount }]
         }
 
         console.log(ledgerData)
-       
+
         try {
             await set(ledgerRef, ledgerData);
             const updatedBalance = currentBalance - paymentAmount;
@@ -304,16 +326,16 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
                 title: "Successful!",
                 text: "✅ Payment recorded and balance updated.",
                 icon: "success",
-                timer:1000,
-                showConfirmButton:false
+                timer: 1000,
+                showConfirmButton: false
             });
             // handleSearch(customerId);
             setCustomerData(prev => prev ? { ...prev, balance: updatedBalance } : prev);
             setFormData(prev => ({ ...prev, amount: '', reference: '' }));
             // setTotals({ totalNotes: 0, totalAmount: 0 });
 
-             calculateLedgerWithDateRangeAndCustomer(ledgerCode, customerId); 
-             reload()
+            calculateLedgerWithDateRangeAndCustomer(ledgerCode, customerId);
+            reload()
         } catch (err) {
             console.error('Payment submission failed:', err);
             Swal.fire({
@@ -338,7 +360,7 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
     const hasAdvance = customerData?.balance < 0;
     const dueAmount = hasDue ? Math.abs(customerData.balance).toFixed(2) : '0.00';
     const advanceAmount = hasAdvance ? Math.abs(customerData.balance).toFixed(2) : '0.00';
-    
+
     const [show, setshow] = useState(false)
     // if(show) return <CustomerTransaction data={customerData} transactions={transactions} back={()=>setshow(false)}/>
 
@@ -371,13 +393,13 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
                 {customerData && (
                     <form onSubmit={handleSubmit} className="mb-8 p-3 sm:p-5 border border-gray-300 rounded-lg shadow-inner bg-gray-50">
                         <h3 className="text-lg sm:text-xl font-bold text-teal-700 mb-3 border-b pb-2">Record New {cType === "Customer" ? "Receipt" : "Payment"}</h3>
-                        
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                           
-                            
+
+
                             {/* Form Fields (Mode, Amount, Reference, Date) */}
                             {/* ... all form fields remain here, no style change needed as p-2.5 input is fine ... */}
-                            
+
                             {/* Payment Mode */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">{cType === "Customer" ? "Receipt" : "Payment"} Mode <span className="text-red-500">*</span></label>
@@ -456,33 +478,32 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`mt-4 sm:mt-6 w-full py-3 text-white font-bold rounded-lg shadow-lg transition duration-150 ${
-                                loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
-                            }`}
+                            className={`mt-4 sm:mt-6 w-full py-3 text-white font-bold rounded-lg shadow-lg transition duration-150 ${loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                                }`}
                         >
                             {loading ? "Processing..." : "✅ Submit Payment"}
                         </button>
                     </form>
                 )}
-                
-                {/* Ledger Table Section */}
-                 {customerData && (
-                    <div className="mt-6 sm:mt-8">
-                      <div className="flex items-center justify-between mb-4 border-b border-teal-700 text-teal-700 pb-2">
-                        <h3 className="text-lg sm:text-2xl font-bold">
-                            Transaction Ledger
-                        </h3>
 
-                      {/* <button
-                            onClick={()=>setshow(true)} 
-                            className="flex items-center gap-2 bg-teal-700 text-white px-4 py-2 rounded hover:bg-teal-800 transition"
-                        >
-                            <Download className="" /> 
-                            <span>Statement</span>
-                        </button> */}
+                {/* Ledger Table Section */}
+                {customerData && (
+                    <div className="mt-6 sm:mt-8">
+                        <div className="flex items-center justify-between mb-4 border-b border-teal-700 text-teal-700 pb-2">
+                            <h3 className="text-lg sm:text-2xl font-bold">
+                                Transaction Ledger
+                            </h3>
+
+                            <button
+                                onClick={handlePdfDownload}
+                                className="flex items-center gap-2 bg-teal-700 text-white px-4 py-2 rounded hover:bg-teal-800 transition"
+                            >
+                                <Download />
+                                <span>Download PDF</span>
+                            </button>
                         </div>
 
-                        <div className="overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-md">
+                        <div ref={tableRef} className="overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-md">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-100">
                                     <tr>
@@ -503,7 +524,7 @@ const Customer_payment = ({data, customerId: propCustomerId, reload }) => {
                                                 <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-right text-red-600">{item.dr_amt || 0}</td>
                                                 <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-right text-green-600">{item.cr_amt || 0}</td>
                                                 <td className={`px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-right font-bold ${item.balance >= 0 ? 'text-red-800' : 'text-green-800'}`}>
-                                                    {item.balance === 0?parseFloat(item.balance).toFixed(2):item.balance>0 ? `${parseFloat(item.balance).toFixed(2)} Dr` : `${Math.abs(parseFloat(item.balance)).toFixed(2)} Cr`}
+                                                    {item.balance === 0 ? parseFloat(item.balance).toFixed(2) : item.balance > 0 ? `${parseFloat(item.balance).toFixed(2)} Dr` : `${Math.abs(parseFloat(item.balance)).toFixed(2)} Cr`}
                                                 </td>
                                             </tr>
                                         ))
