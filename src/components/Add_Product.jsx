@@ -1,4 +1,4 @@
-import { Link} from "react-router";
+import { Link } from "react-router";
 import React, { useEffect, useState } from "react";
 import useApi from "../api/useApi";
 
@@ -25,60 +25,61 @@ export default function Add_Product() {
   const [unit, setunit] = useState("Kg");
   const [pkg, setpkg] = useState(null);
   const [inputType, setInputType] = useState("SINGLE");
+  const [hsnCode, setHsnCode] = useState("");
   const [selectedProductCategory, setSelectedProductCategory] = useState("");
   const [selectedProductSubCategory, setSelectedProductSubCategory] = useState("");
   const [editProductIndex, setEditProductIndex] = useState(null);
 
-   const {getData,postData}=useApi()
+  const { getData, postData } = useApi()
 
-    const fetchcategories= async()=>{
-      const res= await getData('/admin/categories')
-      setCategories(res || [])
-    }
-    const fetchsubcategories= async()=>{
-      const res= await getData('/admin/sub_categories')
-      setSubCategories(res || [])
-    }
-    const fetchproducts= async()=>{
-      const res= await getData('/admin/products')
-      setProducts(res || [])
-    }
+  const fetchcategories = async () => {
+    const res = await getData('/admin/categories')
+    setCategories(res || [])
+  }
+  const fetchsubcategories = async () => {
+    const res = await getData('/admin/sub_categories')
+    setSubCategories(res || [])
+  }
+  const fetchproducts = async () => {
+    const res = await getData('/admin/products')
+    setProducts(res || [])
+  }
 
-      useEffect(() => {
-        (async()=>{
-            try {
-              const [res1, res2, res3] = await Promise.all([
-                getData("/admin/categories"),
-                getData("/admin/sub_categories"),
-                getData("/admin/products"),
-              ]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const [res1, res2, res3] = await Promise.all([
+          getData("/admin/categories"),
+          getData("/admin/sub_categories"),
+          getData("/admin/products"),
+        ]);
 
-              setCategories(res1 || []);
-              setSubCategories(res2 || []);
-              setProducts(res3 || []);
-            } catch (error) {
-              console.error("Error fetching data:", error);
-            }
-        }
-        )()
-      }, [])
+        setCategories(res1 || []);
+        setSubCategories(res2 || []);
+        setProducts(res3 || []);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    }
+    )()
+  }, [])
 
   // ------------------ CATEGORY ------------------
-  const handleCategorySubmit = async(e) => {
+  const handleCategorySubmit = async (e) => {
     e.preventDefault();
     if (!categoryName.trim()) return;
-    let payload={name:categoryName}
+    let payload = { name: categoryName }
     if (editCategoryIndex !== null) {
-      payload.id=editCategoryIndex
+      payload.id = editCategoryIndex
       setEditCategoryIndex(null);
     }
     try {
-      const res= await postData('/admin/categories',payload)
-      console.log(res); 
+      const res = await postData('/admin/categories', payload)
+      console.log(res);
       fetchcategories()
     } catch (error) {
       console.log(error);
-    }finally{
+    } finally {
       setCategoryName("");
     }
   };
@@ -93,23 +94,23 @@ export default function Add_Product() {
   };
 
   // ------------------ SUB CATEGORY ------------------
-  const handleSubCategorySubmit = async(e) => {
+  const handleSubCategorySubmit = async (e) => {
     e.preventDefault();
     if (!subCategoryName.trim() || !selectedCategory) return;
-        let payload={sub_category:subCategoryName,category_id:selectedCategory}
+    let payload = { sub_category: subCategoryName, category_id: selectedCategory }
     if (editSubCategoryIndex !== null) {
-       payload.id=editSubCategoryIndex
+      payload.id = editSubCategoryIndex
       setEditSubCategoryIndex(null);
     }
-     try {
-      const res= await postData('/admin/sub_categories',payload)
-      console.log(res); 
+    try {
+      const res = await postData('/admin/sub_categories', payload)
+      console.log(res);
       fetchsubcategories()
     } catch (error) {
       console.log(error);
-    }finally{
-    setSubCategoryName("");
-    setSelectedCategory("");
+    } finally {
+      setSubCategoryName("");
+      setSelectedCategory("");
     }
   };
 
@@ -123,34 +124,37 @@ export default function Add_Product() {
   };
 
   // ------------------ PRODUCT ------------------
-  const handleProductSubmit = async(e) => {
+  const handleProductSubmit = async (e) => {
     e.preventDefault();
     if (!productName.trim() || !gst || !selectedProductCategory || !selectedProductSubCategory) return;
-    let payload={name:productName,gst:gst,category_id:selectedProductCategory,sub_category_id:selectedProductSubCategory,price:0,unit,pkg:pkg||1,inputType}
+    let payload = { name: productName, gst: gst, hsn_code: hsnCode, category_id: selectedProductCategory, sub_category_id: selectedProductSubCategory, price: 0, unit, pkg: pkg || 1, inputType }
     if (editProductIndex !== null) {
-      payload.id=editProductIndex
+      payload.id = editProductIndex
       setEditProductIndex(null);
-    } 
-      try {
-        const res= await postData('/admin/products',payload)
-        console.log(res); 
-        fetchproducts()
-      } catch (error) {
-        console.log(error);
-      }finally{
-          setProductName("");
-          setgst("");
-          // setpkg("");
-          setunit("");
-          setSelectedProductCategory("");
-          setSelectedProductSubCategory("");
-      }
+    }
+    try {
+      console.log(payload);
+      const res = await postData('/admin/products', payload)
+      console.log(res);
+      fetchproducts()
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setProductName("");
+      setgst("");
+      // setpkg("");
+      setunit("");
+      setHsnCode("");
+      setSelectedProductCategory("");
+      setSelectedProductSubCategory("");
+    }
   };
 
   const handleEditProduct = (p) => {
     setProductName(p.name);
     setgst(p.gst);
     setunit(p.unit);
+    setHsnCode(p.hsn_code || "");
     // setpkg(p.pkg);
     setInputType(p.inputType || "SINGLE");
     setSelectedProductCategory(p.category_id);
@@ -163,8 +167,8 @@ export default function Add_Product() {
 
   const tabClass = (tab) => `
     flex flex-col items-center justify-center w-20 h-16 rounded-lg transition-all
-    ${activeTab === tab 
-      ? 'bg-teal-600 text-white shadow-sm' 
+    ${activeTab === tab
+      ? 'bg-teal-600 text-white shadow-sm'
       : 'bg-white border border-gray-200 text-gray-400 hover:bg-gray-50'}
   `;
 
@@ -191,7 +195,7 @@ export default function Add_Product() {
             <span className="text-xl">📂</span>
             <span className="text-[10px] font-bold uppercase mt-1">Category</span>
           </button>
-          
+
           <button onClick={() => setActiveTab("subcategory")} className={tabClass("subcategory")}>
             <span className="text-xl">🗂️</span>
             <span className="text-[10px] font-bold uppercase mt-1">Sub-Cat</span>
@@ -201,7 +205,7 @@ export default function Add_Product() {
         {/* Main Content Card */}
         <div className="bg-white rounded border border-gray-200 shadow-sm overflow-hidden">
           <div className="p-4">
-            
+
             {/* Category Section */}
             {activeTab === "category" && (
               <div className="space-y-4">
@@ -211,11 +215,11 @@ export default function Add_Product() {
                 </div>
 
                 <form onSubmit={handleCategorySubmit} className="flex gap-2 bg-gray-50 p-2 rounded">
-                  <input 
-                    className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-teal-500 outline-none" 
-                    placeholder="Category name..." 
-                    value={categoryName} 
-                    onChange={(e) => setCategoryName(e.target.value)} 
+                  <input
+                    className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-teal-500 outline-none"
+                    placeholder="Category name..."
+                    value={categoryName}
+                    onChange={(e) => setCategoryName(e.target.value)}
                   />
                   <button className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-1.5 rounded font-semibold text-xs transition-colors">
                     {editCategoryIndex !== null ? "UPDATE" : "ADD NEW"}
@@ -308,12 +312,12 @@ export default function Add_Product() {
                     <label className="text-[10px] text-gray-500 uppercase ml-1">Product Name</label>
                     <input required className="w-full p-1 border rounded text-xs outline-none" placeholder="Name" value={productName} onChange={(e) => setProductName(e.target.value)} />
                   </div>
-                  
+
                   <div className="col-span-2 flex gap-1">
-                  <div>
-                    <label className="text-[10px] text-gray-500 uppercase ml-1">GST</label>
-                    <input required className="w-full p-1 border rounded text-xs outline-none" placeholder="Gst(%)" value={gst} onChange={(e) => setgst(e.target.value)} type="number" />
-                  </div>
+                    <div>
+                      <label className="text-[10px] text-gray-500 uppercase ml-1">GST</label>
+                      <input required className="w-full p-1 border rounded text-xs outline-none" placeholder="Gst(%)" value={gst} onChange={(e) => setgst(e.target.value)} type="number" />
+                    </div>
                     <div>
                       <label className="text-[10px] text-gray-500 uppercase">Unit</label>
                       <select required className="w-full p-0.5 border rounded text-xs outline-none" value={unit} onChange={(e) => setunit(e.target.value)}>
@@ -324,7 +328,11 @@ export default function Add_Product() {
                       <label className="text-[10px] text-gray-500 uppercase">Pkg Size</label>
                       <input required className="w-full p-1 border rounded text-xs outline-none" type="number" value={pkg} onChange={(e) => setpkg(e.target.value)} />
                     </div> */}
-                     <div>
+                    <div className="col-span-1">
+                      <label className="text-[10px] text-gray-500 uppercase">HSN Code</label>
+                      <input required className="w-full p-1 border rounded text-xs outline-none" placeholder="HSN" value={hsnCode} onChange={(e) => setHsnCode(e.target.value)} />
+                    </div>
+                    <div>
                       <label className="text-[10px] text-gray-500 uppercase">INPUT</label>
                       <select required className="w-full p-0.5 border rounded text-xs outline-none" value={inputType} onChange={(e) => setInputType(e.target.value)}>
                         <option>SINGLE</option><option>DUAL</option>
@@ -341,6 +349,7 @@ export default function Add_Product() {
                     <thead>
                       <tr className="bg-gray-100 text-gray-600 font-bold border-b">
                         <th className="p-2">Details</th>
+                        <th className="p-2 text-center">HSN</th>
                         <th className="p-2 text-center">Unit</th>
                         <th className="p-2 text-center">GST</th>
                         <th className="p-2 text-center">Input</th>
@@ -354,6 +363,7 @@ export default function Add_Product() {
                             <div className="font-bold text-gray-800 uppercase text-[11px]">{p.name}</div>
                             <div className="text-[10px] text-gray-400">{p.category_name} &raquo; {p.sub_category_name}</div>
                           </td>
+                          <td className="p-2 text-center text-gray-600">{p.hsn_code}</td>
                           <td className="p-2 text-center text-gray-600">{p.unit}</td>
                           <td className="p-2 text-center font-semibold text-teal-700">{p.gst}%</td>
                           <td className="p-2 text-center rext-gray-600">{p.inputType}</td>
