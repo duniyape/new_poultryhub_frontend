@@ -84,6 +84,7 @@ const fetchData = async () => {
           description: item.name,
           qty: item.total_qty,
           product_id: item.product_id,
+          hsn_code: item.hsn_code || item.hsn || '',
           price: '',
           unit: 'KG',
           amount: 0
@@ -320,25 +321,31 @@ const fetchData = async () => {
               placeholder="Description"
               value={item.description}
               onChange={(e) => handleChange(e, index, 'description')}
-              style={{ flex: '1 1 48%', padding: '10px' }}
+              style={{ flex: '1 1 30%', padding: '10px' }}
+            />
+            <input
+              placeholder="HSN Code"
+              value={item.hsn_code || ''}
+              onChange={(e) => handleChange(e, index, 'hsn_code')}
+              style={{ flex: '1 1 18%', padding: '10px' }}
             />
             <input
               placeholder="Qty"
               value={item.qty}
               onChange={(e) => handleChange(e, index, 'qty')}
-              style={{ flex: '1 1 48%', padding: '10px' }}
+              style={{ flex: '1 1 15%', padding: '10px' }}
             />
             <input
               placeholder="Unit"
               value={item.unit}
               onChange={(e) => handleChange(e, index, 'unit')}
-              style={{ flex: '1 1 48%', padding: '10px' }}
+              style={{ flex: '1 1 15%', padding: '10px' }}
             />
             <input
               placeholder="Price"
               value={item.price}
               onChange={(e) => handleChange(e, index, 'price')}
-              style={{ flex: '1 1 48%', padding: '10px' }}
+              style={{ flex: '1 1 15%', padding: '10px' }}
             />
           </div>
         ))}

@@ -38,24 +38,27 @@ const styles = StyleSheet.create({
 });
 
 const Invoice = ({ data }) => {
-
   const {
-    invoiceid,
-    date,
-    customer,
-    previousBalance,
-    slabSummary,
-    totalIGST,totalCGST,totalSGST,totalTaxable,
-    grandTotal,
-    current_total,
-  } = data;
+    invoiceid = '',
+    date = '',
+    customer = {},
+    previousBalance = 0,
+    slabSummary = [],
+    totalIGST = 0,
+    totalCGST = 0,
+    totalSGST = 0,
+    totalTaxable = 0,
+    grandTotal = 0,
+    current_total = 0,
+  } = data || {};
 
-  const getFilledItems = (items, targetRows = 15) => {
-    const filled = [...items];
+  const getFilledItems = (items = [], targetRows = 15) => {
+    const filled = [...(items || [])];
     while (filled.length < targetRows) {
       filled.push({
         description: '',
         sn: '',
+        hsn_code: '',
         qty: '',
         price: '',
         unit: '',
@@ -64,7 +67,7 @@ const Invoice = ({ data }) => {
     }
     return filled;
   };
-  const filledItems = getFilledItems(data.items);
+  const filledItems = getFilledItems(data?.items);
   return (
     //  <div style={{ height: '100vh' }}>
     //   <PDFViewer width="100%" height="100%">
@@ -85,119 +88,152 @@ const Invoice = ({ data }) => {
         <View style={styles.billToSection}>
           <View style={{ width: '48%' }}>
             <Text style={styles.bold}>Bill to :</Text>
-            <Text>{customer.name}</Text>
-            <Text>{customer.address}</Text>
-            <Text>State : {customer.state}</Text>
-            <Text>Mobile No : {customer.mobile}</Text>
+            <Text>{customer.name || ''}</Text>
+            <Text>{customer.address || ''}</Text>
+            <Text>State : {customer.state || ''}</Text>
+            <Text>Mobile No : {customer.mobile || ''}</Text>
           </View>
           <View style={{ width: '48%' }}>
             <Text>Invoice No : {invoiceid}</Text>
             <Text>Date of Invoice : {date}</Text>
-            <Text>Place of Supply: {customer.name}</Text>
-            <Text>State of Supply : {customer.state}</Text>
-            <Text>Mobile No : {customer.mobile}</Text>
+            <Text>Place of Supply: {customer.name || ''}</Text>
+            <Text>State of Supply : {customer.state || ''}</Text>
+            <Text>Mobile No : {customer.mobile || ''}</Text>
           </View>
         </View>
 
         {/* Table Headers */}
         <View style={styles.tableHeader}>
-          {['S.N', 'Description of Goods', 'Qty.', 'Unit', 'Price', 'Amount'].map((label, i) => (
-            <Text key={i} style={{ ...styles.cell, flex: i === 1 ? 3 : 1 }}>{label}</Text>
+          {[
+            { label: 'S.N', flex: 0.8, align: 'center' },
+            { label: 'Description of Goods', flex: 3, align: 'left' },
+            { label: 'HSN Code', flex: 1.2, align: 'center' },
+            { label: 'Qty.', flex: 1, align: 'center' },
+            { label: 'Unit', flex: 0.8, align: 'center' },
+            { label: 'Price', flex: 1, align: 'center' },
+            { label: 'Amount', flex: 1.4, align: 'right' }
+          ].map((col, i) => (
+            <Text 
+              key={i} 
+              style={{ 
+                ...styles.cell, 
+                flex: col.flex, 
+                textAlign: col.align, 
+                fontWeight: 'bold' 
+              }}
+            >
+              {col.label}
+            </Text>
           ))}
         </View>
 
         {/* Table Rows */}
         {filledItems.map((item, idx) => (
           <View style={styles.tableRow} key={idx}>
-            <Text style={{ ...styles.cell, flex: 1 }}>{item.description && idx + 1}</Text>
-            <Text style={{ ...styles.cell, flex: 3, textAlign: 'left' }}>{item.description}</Text>
-            <Text style={{ ...styles.cell, flex: 1 }}>{(item.unit==="Kg"?item.qty:item.pieces)}</Text>
-            <Text style={{ ...styles.cell, flex: 1 }}>{item.unit}</Text>
-            <Text style={{ ...styles.cell, flex: 1 }}>{item.price}</Text>
-            <Text style={{ ...styles.cell, flex: 1 }}>{item.amount}</Text>
+            <Text style={{ ...styles.cell, flex: 0.8, textAlign: 'center' }}>
+              {item.description ? idx + 1 : ''}
+            </Text>
+            <Text style={{ ...styles.cell, flex: 3, textAlign: 'left' }}>
+              {item.description || ''}
+            </Text>
+            <Text style={{ ...styles.cell, flex: 1.2, textAlign: 'center' }}>
+              {item.description ? (item.hsn_code || item.hsn_Code || item.hsn || '') : ''}
+            </Text>
+            <Text style={{ ...styles.cell, flex: 1, textAlign: 'center' }}>
+              {item.description ? (item.unit === "Kg" ? item.qty : (item.pieces || item.qty || '')) : ''}
+            </Text>
+            <Text style={{ ...styles.cell, flex: 0.8, textAlign: 'center' }}>
+              {item.description ? item.unit : ''}
+            </Text>
+            <Text style={{ ...styles.cell, flex: 1, textAlign: 'center' }}>
+              {item.description ? item.price : ''}
+            </Text>
+            <Text style={{ ...styles.cell, flex: 1.4, textAlign: 'right' }}>
+              {item.description ? item.amount : ''}
+            </Text>
           </View>
         ))}
 
         {/* Total Row */}
         <View style={styles.tablefooter}>
-          <Text style={{ ...styles.cellfooter, flex: 1, textAlign: 'center' }}>{">"}</Text>
-          <Text style={{ ...styles.cellfooter, flex: 3, textAlign: 'left' }}>Total</Text>
+          <Text style={{ ...styles.cellfooter, flex: 0.8, textAlign: 'center' }}>{">"}</Text>
+          <Text style={{ ...styles.cellfooter, flex: 3, textAlign: 'left', fontWeight: 'bold' }}>Total</Text>
+          <Text style={{ ...styles.cellfooter, flex: 1.2 }}></Text>
           <Text style={{ ...styles.cellfooter, flex: 1 }}></Text>
-          <Text style={{ ...styles.cellfooter, flex: 2 }}></Text>
-          <Text style={{ ...styles.cellfooter, flex: 1 }}>{grandTotal.toFixed(2)}</Text>
+          <Text style={{ ...styles.cellfooter, flex: 0.8 }}></Text>
+          <Text style={{ ...styles.cellfooter, flex: 1 }}></Text>
+          <Text style={{ ...styles.cellfooter, flex: 1.4, textAlign: 'right', fontWeight: 'bold' }}>
+            {Number(grandTotal || 0).toFixed(2)}
+          </Text>
         </View>
 
         {/* Grand Total & Words */}
         <View style={{marginTop:5,marginBottom:5}}>
-                  {/* Table Header */}
-        <View style={{flexDirection:'row',justifyContent:"space-between",marginTop: 10,gap:20}}>
-          <View style={{flex:3}}>
-        <View style={{
-          display: "flex",
-          flexDirection: "row",
-          borderWidth: 1,
-          borderColor: "#000",
-          fontSize: 8,
-          fontWeight: "bold",
-          // marginTop:10
-        }}>
-          <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>GST %</Text>
-          <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>Taxable Amount</Text>
-          {/* <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>GST Amount</Text> */}
-          <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>CGST</Text>
-          <Text style={{ flex: 2, padding: 5 }}>SGST</Text>
-        </View>
+          {/* Table Header */}
+          <View style={{flexDirection:'row',justifyContent:"space-between",marginTop: 10,gap:20}}>
+            <View style={{flex:3}}>
+              <View style={{
+                display: "flex",
+                flexDirection: "row",
+                borderWidth: 1,
+                borderColor: "#000",
+                fontSize: 8,
+                fontWeight: "bold",
+              }}>
+                <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>GST %</Text>
+                <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>Taxable Amount</Text>
+                <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>CGST</Text>
+                <Text style={{ flex: 2, padding: 5 }}>SGST</Text>
+              </View>
 
-        {/* Table Rows */}
-        {Object.entries(slabSummary).map(([rate, data], i) => (
-         <View key={i} style={{
-    display: "flex",
-    flexDirection: "row",
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: "#000",
-    fontSize: 10
-  }}>
-    <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>{rate === "0" ? "Exempted" : `${rate}%`}</Text>
-    <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>{data.taxable.toFixed(2)}</Text>
-    {rate === "0" ? (
-      <>
-        {/* <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>-</Text> */}
-        <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>-</Text>
-        <Text style={{ flex: 2, padding: 5 }}>-</Text>
-      </>
-    ) : (
-      <>
-        {/* <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>{data.gstAmount.toFixed(2)}</Text> */}
-        <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>{data.cgst}</Text>
-        <Text style={{ flex: 2, padding: 5 }}>{data.sgst}</Text>
-      </>
-    )}
-  </View>
-))}
-</View>
-  <View style={{flex:1,marginRight:5,gap:5}}>
-          <View style={{flexDirection:'row',justifyContent:'space-between'}}>
-              <Text>Taxable Amt:</Text>
-              <Text style={{fontWeight:'bold'}}>{totalTaxable}/-</Text>
+              {/* Table Rows */}
+              {Object.entries(slabSummary || {}).map(([rate, data], i) => (
+                <View key={i} style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  borderLeftWidth: 1,
+                  borderRightWidth: 1,
+                  borderBottomWidth: 1,
+                  borderColor: "#000",
+                  fontSize: 10
+                }}>
+                  <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>{rate === "0" ? "Exempted" : `${rate}%`}</Text>
+                  <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>{Number(data?.taxable || 0).toFixed(2)}</Text>
+                  {rate === "0" ? (
+                    <>
+                      <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>-</Text>
+                      <Text style={{ flex: 2, padding: 5 }}>-</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={{ flex: 2, padding: 5, borderRightWidth: 1 }}>{data?.cgst || 0}</Text>
+                      <Text style={{ flex: 2, padding: 5 }}>{data?.sgst || 0}</Text>
+                    </>
+                  )}
+                </View>
+              ))}
+            </View>
+            <View style={{flex:1,marginRight:5,gap:5}}>
+              <View style={{flexDirection:'row',justifyContent:'space-between'}}>
+                <Text>Taxable Amt:</Text>
+                <Text style={{fontWeight:'bold'}}>{Number(totalTaxable || 0).toFixed(2)}/-</Text>
+              </View>
+              <View style={{flexDirection:'row',justifyContent:'space-between',borderBottom:"1px solid black" }}>
+                <Text>GST :</Text>
+                <Text style={{fontWeight:'bold'}}>{(Number((totalCGST || 0) + (totalSGST || 0) + (totalIGST || 0))).toFixed(2)}/-</Text>
+              </View>
+              <View style={{flexDirection:'row',justifyContent:'space-between',borderBottom:"1px solid black"}}>
+                <Text>Net Amt:</Text>
+                <Text style={{fontWeight:'bold'}}>{Number(grandTotal || 0).toFixed(2)}/-</Text>
+              </View>
+            </View>
           </View>
-          <View style={{flexDirection:'row',justifyContent:'space-between',borderBottom:"1px solid black" }}>
-              <Text>GST :</Text>
-              <Text style={{fontWeight:'bold'}}>{(Number(totalCGST+totalSGST+totalIGST)).toFixed(2)}/-</Text>
-          </View>
-          <View style={{flexDirection:'row',justifyContent:'space-between',borderBottom:"1px solid black"}}>
-              <Text>Net Amt:</Text>
-              <Text style={{fontWeight:'bold'}}>{grandTotal.toFixed(2)}/-</Text>
-          </View>
-  </View>
-  </View>
         </View>
 
         {/* Balances */}
         <View style={styles.footer}>
-          <Text>Previous Balance : {Math.abs(parseFloat(previousBalance).toFixed(0))}/-</Text>
-          <Text>Current Balance : {current_total.toFixed(0)}/- </Text>
+          <Text>Previous Balance : {Math.abs(parseFloat(previousBalance || 0)).toFixed(0)}/-</Text>
+          <Text>Current Balance : {Number(current_total || 0).toFixed(0)}/- </Text>
         </View>
 
         {/* Terms */}

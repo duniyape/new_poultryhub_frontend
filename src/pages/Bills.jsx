@@ -209,17 +209,18 @@ const Fetchdata = async (e) => {
 
   // --- DETAIL VIEW COMPONENT ---
   const DetailView = () => {
-    const totalOutstanding = (parseFloat(selectedInvoice.grandTotal) + Math.abs(parseFloat(selectedInvoice.previousBalance)));
+    const totalOutstanding = (parseFloat(selectedInvoice.grandTotal || 0) + Math.abs(parseFloat(selectedInvoice.previousBalance || 0)));
     const { showLoader, hideLoader } = useLoader();
      
      const handleDownload = async (res) => {
-        showLoader()
+        showLoader();
         try {
           const blob = await pdf(<Invoice data={res} type="sale" />).toBlob();
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = `bill-${res.invoiceid}.pdf`;
+          const safeId = (res.invoiceid || 'invoice').replace(/[\/\\:]/g, '-');
+          link.download = `bill-${safeId}.pdf`;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
@@ -227,7 +228,26 @@ const Fetchdata = async (e) => {
         } catch (error) {
           console.error('Failed to download PDF:', error);
         } finally {
-          hideLoader()
+          hideLoader();
+        }
+      };
+
+      const handlePrint = async (res) => {
+        showLoader();
+        try {
+          const blob = await pdf(<Invoice data={res} type="sale" />).toBlob();
+          const url = URL.createObjectURL(blob);
+          const printWindow = window.open(url, '_blank');
+          if (printWindow) {
+            printWindow.onload = () => {
+              printWindow.focus();
+              printWindow.print();
+            };
+          }
+        } catch (error) {
+          console.error('Failed to print PDF:', error);
+        } finally {
+          hideLoader();
         }
       };
 
@@ -239,7 +259,7 @@ const Fetchdata = async (e) => {
               onClick={() => setView('list')}
               className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm transition-all"
             >
-              <ArrowLeft className="w-4 h-4 text-white-600" />
+              <ArrowLeft className="w-4 h-4 text-slate-600" />
             </button>   
             <div>
               <h2 className="text-lg font-bold text-slate-900">Invoice Details</h2>
@@ -247,9 +267,18 @@ const Fetchdata = async (e) => {
             </div>
           </div>
           <div className="flex gap-2">
-            {selectedInvoice.type==="sell"&&<button onClick={()=>handleDownload(selectedInvoice)} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all">
-              <Printer className="w-4 h-4" /> Print
-            </button>}
+            <button 
+              onClick={() => handleDownload(selectedInvoice)} 
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all shadow-xs"
+            >
+              <Download className="w-4 h-4 text-blue-600" /> Download PDF
+            </button>
+            <button 
+              onClick={() => handlePrint(selectedInvoice)} 
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-all shadow-xs"
+            >
+              <Printer className="w-4 h-4" /> Print Bill
+            </button>
           </div>
         </div>
 
@@ -263,21 +292,21 @@ const Fetchdata = async (e) => {
               </div>
               <div className="flex flex-col md:flex-row md:justify-between gap-4">
                 <div>
-                  <h4 className="text-xl font-black text-slate-900">{selectedInvoice.customer.name}</h4>
+                  <h4 className="text-xl font-black text-slate-900">{selectedInvoice.customer?.name}</h4>
                   <div className="mt-2 space-y-1">
                     <p className="text-sm text-slate-600 flex items-center gap-2">
                       <MapPin className="w-3 h-3 text-slate-400" /> 
-                      {selectedInvoice.customer.address}, {selectedInvoice.customer.state}
+                      {selectedInvoice.customer?.address}, {selectedInvoice.customer?.state}
                     </p>
                     <p className="text-sm text-slate-600 flex items-center gap-2">
                       <Phone className="w-3 h-3 text-slate-400" /> 
-                      {selectedInvoice.customer.mobile}
+                      {selectedInvoice.customer?.mobile}
                     </p>
                   </div>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 self-start">
                   <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Vendor Reference</p>
-                  <p className="text-sm font-mono font-bold text-slate-700">{selectedInvoice.vendor_id.toUpperCase()}</p>
+                  <p className="text-sm font-mono font-bold text-slate-700">{selectedInvoice.vendor_id ? selectedInvoice.vendor_id.toUpperCase() : 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -300,12 +329,12 @@ const Fetchdata = async (e) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {selectedInvoice.items.map((item, idx) => (
+                    {selectedInvoice.items?.map((item, idx) => (
                       <tr key={idx} className="text-sm">
                         <td className="px-5 py-2">
                           <p className="font-bold text-slate-800">{item.description}</p>
                         </td>
-                        <td className="px-5 py-2 text-slate-600">{item.hsn_Code}</td>
+                        <td className="px-5 py-2 text-slate-600 font-mono font-medium">{item.hsn_code || item.hsn_Code || item.hsn || "-"}</td>
                         <td className="px-5 py-2 text-slate-600">{item.qty} {item.unit}</td>
                         <td className="px-5 py-2 text-slate-600">₹{item.price}</td>
                         <td className="px-5 py-2 text-right font-black text-slate-900">₹{item.amount}</td>
