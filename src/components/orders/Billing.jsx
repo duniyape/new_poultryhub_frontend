@@ -155,6 +155,7 @@ const BillingPopup = ({data,onClose}) => {
      const invoiceid= invoiceNo||`PUR-${Math.floor(100000 + Math.random() * 900000)}`;
       const items = data.map(item => ({
           description: item.name,
+          hsn_code: item.hsn_code||"N/A",
           qty: item.quantity||0,
           pieces: item.pieces||0,
           product_id: item.id,

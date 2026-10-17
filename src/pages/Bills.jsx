@@ -27,6 +27,7 @@ const App = () => {
  
   const handleSelectInvoice = (invoice) => {
     setSelectedInvoice(invoice);
+    console.log(invoice);
     setView('detail');
     window.scrollTo(0, 0);
   };
@@ -292,6 +293,7 @@ const Fetchdata = async (e) => {
                   <thead>
                     <tr className="bg-white border-b border-slate-50">
                       <th className="px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Description</th>
+                      <th className="px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">HSN Code</th>
                       <th className="px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Qty</th>
                       <th className="px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Rate</th>
                       <th className="px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Amount</th>
@@ -303,6 +305,7 @@ const Fetchdata = async (e) => {
                         <td className="px-5 py-2">
                           <p className="font-bold text-slate-800">{item.description}</p>
                         </td>
+                        <td className="px-5 py-2 text-slate-600">{item.hsn_Code}</td>
                         <td className="px-5 py-2 text-slate-600">{item.qty} {item.unit}</td>
                         <td className="px-5 py-2 text-slate-600">₹{item.price}</td>
                         <td className="px-5 py-2 text-right font-black text-slate-900">₹{item.amount}</td>
