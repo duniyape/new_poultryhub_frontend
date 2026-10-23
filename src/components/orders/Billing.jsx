@@ -124,6 +124,78 @@ const BillingPopup = ({data,onClose}) => {
   };
 }, [items, gstmode, supplyType]);
 
+const sendmsg = async (invoiceNo,amount,date,dt,total,mobile) => {
+  console.log("Sending WhatsApp message with data:", data);
+  try {
+    const PHONE_NUMBER_ID = "1392613863933350";
+    const ACCESS_TOKEN = "EACH6PXeLx50BS6iTmAByAVJYsYAsdBJ4wWvemuVxEZBq3YJ2XsWAiROaIb9SOyUJEBwutJNlRq4U2HWZCRQjU0YtfIGQjZBETfOEWaokipFQGWBDJj6vT8a9cyZA639Bl0Xtf8KN7nRt3EdY7rxqZC1zMZC5doVmbqIN4NjCCf1drKAvo4wJMWzPzNPZBqNBkUH3QZDZD";
+
+    const url = `https://graph.facebook.com/v23.0/${PHONE_NUMBER_ID}/messages`;
+
+    const payload = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: "91"+mobile, // Recipient mobile number
+      type: "template",
+      template: {
+        name: "invoice_reciept2", // Approved Utility template
+        language: {
+          code: "en"
+        },
+        components: [
+          {
+            type: "body",
+            parameters: [
+              {
+                type: "text",
+                text: invoiceNo || "Customer"
+              },
+              {
+                type: "text",
+                text: amount || "0.00"
+              },
+              {
+                type: "text",
+                text: date || "22 October 2026"
+              },
+              {
+                type: "text",
+                text: dt || "Debit"
+              },
+              {
+                type: "text",
+                text: total || "0.00"
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(JSON.stringify(result));
+    }
+
+    console.log("Message sent successfully:", result);
+    return result;
+
+  } catch (error) {
+    console.log("WhatsApp message error:", error.message);
+    return { success: false, error: error.message };
+  }
+};
+
   
   const postdata = async (data) => {
     try {
@@ -174,6 +246,7 @@ const BillingPopup = ({data,onClose}) => {
             address: user.address,
             state: user.state,
             mobile: user.number,
+            gst: user.gst,
           },  
           items,
           type: user.v_type=== 'Customer' ? 'sell' : 'purchase',
@@ -191,6 +264,7 @@ const BillingPopup = ({data,onClose}) => {
         }
     const res=await postdata(invoicedata)
     console.log("Response from bill generation:", res);
+    sendmsg(res.invoice_no,res.data.grandTotal,res.data.date,"Debit",res.data.current_total,res.data.customer.mobile) 
     if (!res) return (
      Swal.fire({
       title: "Error!",
@@ -207,6 +281,10 @@ const BillingPopup = ({data,onClose}) => {
     // link.click();
     // URL.revokeObjectURL(url);
     // hideLoader()
+
+
+
+
     Swal.fire({
       title: "Sucessful!",
       text: "Bill Generated Successfully!",

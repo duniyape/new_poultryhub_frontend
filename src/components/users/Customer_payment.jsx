@@ -192,10 +192,13 @@ const handlePdfDownload = () => {
     const leftX = 14;
     const rightX = pageWidth / 2 + 5;
 
+    console.log("Customer Data for PDF:", customerData);
+
     const leftDetails = [
         `Shop Name: ${customerData?.shop || "-"}`,
         `Owner Name: ${customerData?.owner || "-"}`,
-        `Customer ID: ${customerId || "-"}`,
+        // `Customer ID: ${customerId || "-"}`,
+        `GST No: ${customerData?.gstin || "-"}`,
     ];
 
     const rightDetails = [
@@ -444,6 +447,74 @@ const handlePdfDownload = () => {
         }
     };
 
+    const sendmsg = async (invoiceNo,amount,date,dt,mobile) => {
+  console.log("Sending WhatsApp message with data:", data);
+  try {
+    const PHONE_NUMBER_ID = "1392613863933350";
+    const ACCESS_TOKEN = "EACH6PXeLx50BS6iTmAByAVJYsYAsdBJ4wWvemuVxEZBq3YJ2XsWAiROaIb9SOyUJEBwutJNlRq4U2HWZCRQjU0YtfIGQjZBETfOEWaokipFQGWBDJj6vT8a9cyZA639Bl0Xtf8KN7nRt3EdY7rxqZC1zMZC5doVmbqIN4NjCCf1drKAvo4wJMWzPzNPZBqNBkUH3QZDZD";
+
+    const url = `https://graph.facebook.com/v23.0/${PHONE_NUMBER_ID}/messages`;
+
+    const payload = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: "91"+mobile, // Recipient mobile number
+      type: "template",
+      template: {
+        name: "receipt_invoice", // Approved Utility template
+        language: {
+          code: "en"
+        },
+        components: [
+          {
+            type: "body",
+            parameters: [
+              {
+                type: "text",
+                text: invoiceNo || "Customer"
+              },
+              {
+                type: "text",
+                text: amount || "0.00"
+              },
+              {
+                type: "text",
+                text: date || "22 October 2026"
+              },
+              {
+                type: "text",
+                text: dt || "Debit"
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(JSON.stringify(result));
+    }
+
+    console.log("Message sent successfully:", result);
+    return result;
+
+  } catch (error) {
+    console.log("WhatsApp message error:", error.message);
+    return { success: false, error: error.message };
+  }
+};
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!customerData || !formData.amount || parseFloat(formData.amount) <= 0) return;
@@ -484,6 +555,7 @@ const handlePdfDownload = () => {
             await set(ledgerRef, ledgerData);
             const updatedBalance = currentBalance - paymentAmount;
             await update(ref(database, `vendor/${customerId}`), { balance: updatedBalance });
+            sendmsg(paymentAmount,new Date().toLocaleDateString("en-GB"),"Debit",updatedBalance,customerData.contact)
             // await sendInvoice(); 
             Swal.fire({
                 title: "Successful!",

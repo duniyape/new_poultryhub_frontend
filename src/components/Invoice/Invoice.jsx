@@ -38,6 +38,7 @@ const styles = StyleSheet.create({
 });
 
 const Invoice = ({ data }) => {
+  console.log("Invoice Data:", data);
   const {
     invoiceid = '',
     date = '',
@@ -92,11 +93,12 @@ const Invoice = ({ data }) => {
             <Text>{customer.address || ''}</Text>
             <Text>State : {customer.state || ''}</Text>
             <Text>Mobile No : {customer.mobile || ''}</Text>
+            <Text>GST No : {customer.gst || ''}</Text>
           </View>
           <View style={{ width: '48%' }}>
             <Text>Invoice No : {invoiceid}</Text>
             <Text>Date of Invoice : {date}</Text>
-            <Text>Place of Supply: {customer.name || ''}</Text>
+            {/* <Text>Place of Supply: {customer.name || ''}</Text> */}
             <Text>State of Supply : {customer.state || ''}</Text>
             <Text>Mobile No : {customer.mobile || ''}</Text>
           </View>
