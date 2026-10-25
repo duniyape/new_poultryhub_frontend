@@ -1,5 +1,5 @@
 import React from 'react';
-import logo from '../../assets/logo.jpeg';
+import logo from '../../assets/logo.png';
 import sign from '../../assets/sign.png';
 import {
   PDFViewer, Page,
@@ -74,15 +74,16 @@ const Invoice = ({ data }) => {
     //   <PDFViewer width="100%" height="100%">
     <Document>
       <Page size="A4" style={styles.page}>
-        <Image style={{ width: 70, position: 'absolute', top: 15, left: 80 }} src={logo} alt="logo..." />
+        <Image style={{ width: 80,height:50, position: 'absolute', top: 25, left: 80 }} src={logo} alt="logo..." />
 
         {/* Header */}
         <View style={styles.header}>
           <Text style={{ fontSize: 14, fontWeight: 'bold' }}>INVOICE</Text>
-          <Text>NEW POULTRY HUB</Text>
+          <Text>Local Prime Foods</Text>
           <Text>Shop No-27, Ground Floor, Model Town, Phase-3</Text>
           <Text>Bathinda, PUNJAB, Pin: 151001</Text>
-          <Text>Tel.: 07554 604558 | Email: newpoultryhub@gmail.com</Text>
+          <Text>GSTIN: 03BFYPK8093R1Z8</Text>
+          <Text>Tel.: 8054666456 | Email: Local.Prime.Foods@gmail.com</Text>
         </View>
 
         {/* Customer and Invoice Info */}

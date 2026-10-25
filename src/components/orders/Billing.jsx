@@ -160,11 +160,11 @@ const sendmsg = async (invoiceNo,amount,date,dt,total,mobile) => {
               },
               {
                 type: "text",
-                text: dt || "Debit"
+                text: parseFloat(total)>0? dt:"Credit" || "Debit"
               },
               {
                 type: "text",
-                text: total || "0.00"
+                text: parseFloat(total)>0?total:parseFloat(total)*-1 || "0.00"
               }
             ]
           }

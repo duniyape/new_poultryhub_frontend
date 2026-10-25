@@ -479,11 +479,11 @@ const handlePdfDownload = () => {
               },
               {
                 type: "text",
-                text: date || "22 October 2026"
+                text:  parseFloat(dt)>0? "Debit":"Credit" 
               },
               {
                 type: "text",
-                text: dt || "Debit"
+                text: parseFloat(dt)>0?dt:parseFloat(dt)*-1 || "Debit"
               }
             ]
           }
